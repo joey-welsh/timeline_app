@@ -197,7 +197,6 @@
               yAxisMapping[index] = maxStack;
               maxStack++;
             }
-
             // figure out beginning and ending times if they are unspecified
             datum.times.forEach(function (time, i) {
               if(beginning === 0)
@@ -287,7 +286,7 @@
             })
             .attr("class", function (d, i) {
               // @pa7
-              // if the data object has a class use it, 
+              // if the data object has a class use it,
               // if not check for a datum class, default to index
               if (datum.class && !d.class) {
                 return "timelineSeries_"+datum.class;

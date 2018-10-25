@@ -38,17 +38,43 @@
     <splunk-control-group label="Axis labels">
         <splunk-select name="{{VIZ_NAMESPACE}}.axisTimeFormat" value="SECONDS">
             <option value="DAYS">DD/MM/YYYY</option>
+            <option value="DATE">YYYY-MM-DD</option>
+            <option value="TIMESTAMP">YYYY-MM-DD HH:MM:SS</option>
             <option value="MINUTES">HH:MM</option>
             <option value="SECONDS" selected>HH:MM:SS</option>
             <option value="SUBSECONDS">HH:MM:SS ms</option>
          </splunk-radio-input>
     </splunk-control-group>
+    <div class="control-group">
+        <label class="control-label">Axis labels Override</label>
+        <div class="controls controls-block">
+            <splunk-text-input name="{{VIZ_NAMESPACE}}.axisTimeFormatOverride"></splunk-text-input>
+            <span class="help-block ">Use your own strftime and override defaults. Example: http://strftime.org/</span>
+        </div>
+    </div>
     <splunk-control-group label="Tooltips">
         <splunk-select name="{{VIZ_NAMESPACE}}.tooltipTimeFormat" value="SECONDS">
             <option value="DAYS">DD/MM/YYYY</option>
+            <option value="DATE">YYYY-MM-DD</option>
+            <option value="TIMESTAMP">YYYY-MM-DD HH:MM:SS</option>
             <option value="MINUTES">HH:MM</option>
             <option value="SECONDS" selected>HH:MM:SS</option>
             <option value="SUBSECONDS">HH:MM:SS ms</option>
         </splunk-radio-input>
     </splunk-control-group>
+    <div class="control-group">
+        <label class="control-label">Tooltips Override</label>
+        <div class="controls controls-block">
+            <splunk-text-input name="{{VIZ_NAMESPACE}}.tooltipTimeFormatOverride"></splunk-text-input>
+            <span class="help-block ">Use your own strftime and override defaults. Example: http://strftime.org/</span>
+        </div>
+    </div>
+</form>
+<form class="splunk-formatter-section" section-label="Time reference">
+  <splunk-control-group label="Use Time Picker">
+      <splunk-radio-input name="{{VIZ_NAMESPACE}}.useTimePicker" value="0">
+          <option value="1">Yes</option>
+          <option value="0">No</option>
+      </splunk-radio-input>
+  </splunk-control-group>
 </form>

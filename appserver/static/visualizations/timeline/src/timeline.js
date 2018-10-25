@@ -5,6 +5,7 @@ define([
             'api/SplunkVisualizationUtils',
             'd3',
             'moment',
+            'moment-strftime',
             '../contrib/d3-timeline',
             'bootstrap/js/tooltip'
         ],
@@ -32,6 +33,8 @@ define([
 
     var TIME_FORMATS = {
         'DAYS': '%x',
+        'DATE': '%Y-%m-%d',
+        'TIMESTAMP': '%Y-%m-%d %H:%M:%S',
         'MINUTES': '%H:%M',
         'SECONDS': '%X',
         'SUBSECONDS': '%X %L'
@@ -68,9 +71,11 @@ define([
             var rows = data.rows;
             var config = this._getConfig();
             var useColors = vizUtils.normalizeBoolean(this._getEscapedProperty('useColors', config));
+            var useTimePicker = vizUtils.normalizeBoolean(this._getEscapedProperty('useTimePicker', config));
             var timeIndex = 0;
             var resourceIndex = 1;
-            var durationIndex = useColors ? 3 : 2;
+            var hasDuration = fields.filter(function(e) { return e.name === 'duration'; }).length > 0;
+            var durationIndex = hasDuration ? (useColors ? 3 : 2) : -1;
 
             if (rows.length < 1 && fields.length < 1) {
                 return false;
@@ -82,6 +87,14 @@ define([
                 );
             }
 
+            if (useTimePicker && fields.length < 3) {
+                throw new SplunkVisualizationBase.VisualizationError(
+                    'Check the Statistics tab. To generate a timeline based on time picker range, the results table must include columns representing these three dimension types: <time>, <resource>, <earliest>.'
+                );  
+            }
+  
+            var startTimePickerIndex = fields.length -1;
+
             var groups = {};
             var result = [];
             var colorCategories = {};
@@ -91,7 +104,8 @@ define([
             // 2 -> [colorField | duration]
             // 3 -> [duration]
             // n optional key value pairs
-            var minStartingTime = +new Date;
+            // n-1 -> [earliestTime]
+            var minStartingTime = useTimePicker ? rows[0][startTimePickerIndex] : +new Date;
             var maxEndingTime = 0;
             var nonNumericalCategories = false;
 
@@ -136,10 +150,17 @@ define([
                 entry['class'] = 'ccat-' + category;
 
                 var sliceIndex = useColors ? 4 : 3;
-                var rowKeyVals = row.slice(sliceIndex);
-                var meta = {};
+                if (!hasDuration) {
+                  sliceIndex = sliceIndex - 1;
+                }
+                var rowKeyVals = useTimePicker ?
+                      row.slice(sliceIndex, startTimePickerIndex) : row.slice(sliceIndex);
+                var meta = [];
                 _.each(rowKeyVals, function(m, i) {
-                    meta[fields[i+sliceIndex].name] = m;
+                    var obj = {};
+                    obj['category'] = m;
+                    obj['name'] = fields[i+sliceIndex].name;
+                    meta.push(obj);
                 });
                 entry['meta'] = meta;
 
@@ -189,7 +210,23 @@ define([
             var minColor = this._getEscapedProperty('minColor', config) || '#FFE8E8';
             var maxColor = this._getEscapedProperty('maxColor', config) || '#DA5C5C';
             var axisTimeFormat = TIME_FORMATS[this._getEscapedProperty('axisTimeFormat', config) || 'SECONDS'];
+            var axisTimeFormatOverride = this._getEscapedProperty('axisTimeFormatOverride', config) || null;
             var tooltipTimeFormat = TIME_FORMATS[this._getEscapedProperty('tooltipTimeFormat', config) || 'SECONDS'];
+            var tooltipTimeFormatOverride = this._getEscapedProperty('tooltipTimeFormatOverride', config) || null;
+            
+            // Adding axis/tooltip Time Override functionality
+            this._resetTimeFormatValidation();
+            if (axisTimeFormatOverride != null) {
+              if (this._validateTime(axisTimeFormatOverride, "axisTimeFormatOverride")) {
+                axisTimeFormat = axisTimeFormatOverride;
+              }
+            }
+
+            if (tooltipTimeFormatOverride != null) {
+              if (this._validateTime(tooltipTimeFormatOverride, "tooltipTimeFormatOverride")) {
+                tooltipTimeFormat = tooltipTimeFormatOverride;
+              }
+            }
 
             var colorScale;
             var chartWidth;
@@ -272,6 +309,7 @@ define([
                 .colors(function(d) { return colorScale(categoryScale(d)); })
                 .colorProperty('category')
                 .width(chartWidth)
+                .beginning(data.beginning)
                 // if there is no interval (i.e. only one event) show a 100ms interval
                 .ending(data.beginning !== data.ending ? data.ending : data.ending + 100)
                 .mouseover(function(d, i, el) {
@@ -294,13 +332,21 @@ define([
                     var timeSpanString = d3.time.format(tooltipTimeFormat)(new Date(d.starting_time)) +
                             (d.ending_time ? ' - ' + d3.time.format(tooltipTimeFormat)(new Date(d.ending_time)) : '');
 
+                    // Escaping each additional resource
+                    _.each(d.meta, function(e, key) {
+                        e['name'] = vizUtils.escapeHtml(e['name']);
+                        e['category'] = vizUtils.escapeHtml(e['category']);
+                        e['color'] = 'white';
+                    });
+
                     var tooltipContent = that.compiledTooltipTemplate({
                         timeSpan: timeSpanString,
                         firstFieldName: vizUtils.escapeHtml(fields[indexes.resourceIndex].name),
                         secondFieldName: useColors ? vizUtils.escapeHtml(fields[2].name) : '',
                         resource: vizUtils.escapeHtml(d.resource),
                         category: useColors ? vizUtils.escapeHtml(d.category) : false,
-                        color: (useColors ? colorScale(categoryScale(d.category)) : 'white')
+                        color: (useColors ? colorScale(categoryScale(d.category)) : 'white'),
+                        extraFields: d.meta
                     });
 
                     if (tagName === 'rect') {
@@ -502,13 +548,44 @@ define([
             return false;
         },
 
+        _resetTimeFormatValidation: function() {
+            $("splunk-text-input[name*=axisTimeFormatOverride] input").css("border", "1px solid rgb(195, 203, 212)");
+            $("splunk-text-input[name*=tooltipTimeFormatOverride] input").css("border", "1px solid rgb(195, 203, 212)");
+        },
+  
+        _setTimeFormatValidation: function(strOverride, strBorder) {
+            $("splunk-text-input[name*=" + strOverride + "] input").css("border", strBorder);
+        },
+  
+        _validateTime: function(strOverride, strOverrideName) {
+            var formatted = moment().strftime(strOverride);
+
+            if (/%/.test(formatted) == false) {
+                // Additional check caused by d3v3.5. Some formats are missing.
+                // https://github.com/d3/d3-3.x-api-reference/blob/master/Time-Formatting.md
+                if (/%f/.test(strOverride) == true){
+                this._setTimeFormatValidation(strOverrideName, "2px solid red");
+                return false;
+                }
+                return true;
+            }
+
+            this._setTimeFormatValidation(strOverrideName, "2px solid red");
+            return false;
+        },
+
         _tooltipTemplate: '\
                 <p class="time-span-label"><%= timeSpan %></p>\
                 <div class="tooltip-meta">\
                     <p><span><%= firstFieldName %>: </span><span><%= resource %></span></p>\
                     <% if (category) { %>\
-                        <p><span><%= secondFieldName %>: </span><span style="color:<%= color %>;"><%= category %></span></p>\
+                          <p><span><%= secondFieldName %>: </span><span style="color:<%= color %>;"><%= category %></span></p>\
                     <% } %>\
+                    <%_.forEach(extraFields, function (field) {%>\
+                      <% if (field.category) { %>\
+                          <p><span><%= field.name %>: </span><span style="color:<%= field.color %>;"><%= field.category %></span></p>\
+                      <% } %>\
+                    <% }) %>\
                 </div>\
         '
     });

@@ -1,0 +1,87 @@
+<form>
+  <label>Timeline Custom</label>
+  <description>This Dashboard shows a possible usage of Timeline Custom Visualization with option to use the Time Picker.</description>
+  <search>
+    <query>
+      |makeresults
+    </query>
+    <earliest>$time_token.earliest$</earliest>
+    <latest>$time_token.latest$</latest>
+    <progress>
+      <eval token="time_tok_earliest">round(strptime($job.earliestTime$,"%Y-%m-%dT%H:%M:%S.%3N%z")* 1000)</eval>
+    </progress>
+  </search>
+  <fieldset submitButton="false">
+    <input type="time" token="time_token" searchWhenChanged="true">
+      <label>Time Picker</label>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Search time interval driven by Time Picker</title>
+      <viz type="timeline_app.timeline">
+        <title>Don't forget the duration might expand values in the "future"</title>
+        <search>
+          <query>index="timeline_sample"
+| eval duration = 86400000
+| eval earliest_tpicker = $time_tok_earliest$
+| stats count by _time, duration, first_name, gender, earliest_tpicker
+| table _time gender first_name earliest_tpicker</query>
+          <earliest>$time_token.earliest$</earliest>
+          <latest>$time_token.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="timeline_app.timeline.axisTimeFormat">DAYS</option>
+        <option name="timeline_app.timeline.colorMode">categorical</option>
+        <option name="timeline_app.timeline.maxColor">#DA5C5C</option>
+        <option name="timeline_app.timeline.minColor">#FFE8E8</option>
+        <option name="timeline_app.timeline.numOfBins">6</option>
+        <option name="timeline_app.timeline.tooltipTimeFormat">TIMESTAMP</option>
+        <option name="timeline_app.timeline.useColors">0</option>
+        <option name="timeline_app.timeline.useTimePicker">1</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </viz>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Search time interval driven by dataset</title>
+      <viz type="timeline_app.timeline">
+        <title>This search filters events happening in September</title>
+        <search>
+          <query>index="timeline_sample"
+| where date_month = "september"
+| eval random_end_time = _time + random()%86400
+| eval duration = (random_end_time - _time) * 1000 * (random()%5 +1 )
+| eval duration = IF(duration &lt; 86400000, 0, duration)
+| stats count by _time, duration, first_name, gender
+| table _time gender duration first_name</query>
+          <earliest>0</earliest>
+          <latest></latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="timeline_app.timeline.axisTimeFormat">DAYS</option>
+        <option name="timeline_app.timeline.colorMode">categorical</option>
+        <option name="timeline_app.timeline.maxColor">#DA5C5C</option>
+        <option name="timeline_app.timeline.minColor">#FFE8E8</option>
+        <option name="timeline_app.timeline.numOfBins">6</option>
+        <option name="timeline_app.timeline.tooltipTimeFormat">DAYS</option>
+        <option name="timeline_app.timeline.useColors">0</option>
+        <option name="timeline_app.timeline.useTimePicker">0</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </viz>
+    </panel>
+  </row>
+</form>

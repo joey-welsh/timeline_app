@@ -19,6 +19,7 @@
     "d3": "^3.5.16",
     "jquery": "^2.1.4",
     "moment": "^2.13.0",
+    "moment-strftime": "^0.5.0",
     "underscore": "^1.8.3"
   }
 }
