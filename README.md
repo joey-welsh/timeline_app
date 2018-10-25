@@ -51,6 +51,10 @@ The FDSE Team @ Splunk came up with the following augmentations to provide addit
     * The duration, if specified, might expand the visualization into the “future”.
     * For the time being, custom Timeline visualizations driven by a time range picker, is only supported within a dashboard and cannot be implemented in an independent search window.
 
+## Contributors
+
+Curious to know who the authors are? [Check them out](https://github.com/welshSplunker/timeline_app/blob/master/AUTHORS.md)!
+
 ## EOF 
 
 * **:heart: it?** Tweet here : [`@splunk`](https://twitter.com/splunk) or email us at [`fdse [@] s p l u n k {.} C O M`](mailto:fdse@splunk.com?subject=[Splunk-CustomTimelineApp]%20Hi%20there!).
