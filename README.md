@@ -30,7 +30,7 @@ The FDSE Team @ Splunk came up with the following augmentations to provide addit
 
 1. Navigate to the Timeline Gallery page.
 2. Hover over each timeline marker to view the tooltips with additional fields.
-3. Syntax : 
+3. Syntax (extended from [documentation](http://docs.splunk.com/Documentation/Timeline/1.3.0/TimelineViz/TimelineSearchDataFormat)): 
 ```
 ... | table _time <resource_field> [<color_field>] [<duration_field>] [<additional fields>]
 ```
@@ -43,21 +43,13 @@ The FDSE Team @ Splunk came up with the following augmentations to provide addit
     * Dataset : This option would ensure the labels on the visualization are driven by the _time variable within the dataset.
     * Picker : This option would ensure the labels on the visualization are driven by the time range picker token that the visualization is dependent on.
 4. By selecting other intervals with the Time Picker, check the timeline viz changing accordingly.
-5. Syntax : 
+5. Syntax (extended from [documentation](http://docs.splunk.com/Documentation/Timeline/1.3.0/TimelineViz/TimelineSearchDataFormat)): 
 ```
 ... | table _time <resource_field> [<color_field>] [<duration_field>] [<n_additional_fields>] [$<time_range_picker_token>.earliest$]
 ```
 6. IMPORTANT TO NOTE : 
     * The duration, if specified, might expand the visualization into the “future”.
     * For the time being, custom Timeline visualizations driven by a time range picker, is only supported within a dashboard and cannot be implemented in an independent search window.
-
-## Contributors
-
-* **Erica Pescio** 
-* **Karthika Krishnan**
-* **Joe Welsh** 
-* **Mayur Pipaliya** 
-* **Sandeep Vasani** 
 
 ## EOF 
 
